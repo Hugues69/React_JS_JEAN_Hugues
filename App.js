@@ -1,66 +1,87 @@
-import React from 'react';
-import { ImageBackground, StyleSheet, Text, View, FlatList, TextInput, IconButton, Button,} from 'react-native';
+import React, { useState } from 'react';
+import { ImageBackground, StyleSheet, Text, View, FlatList, TextInput, Button } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const image = require('./assets/video-game-background-1405076_1280.png'); 
+const image = require('./assets/video-game-background-1405076_1280.png');
 
- 
- const sampleGoals = [
-  "Faire les courses",
-  "Aller à la salle de sport 3 fois par semaine",
-  "Monter à plus de 5000m d altitude",
-  "Acheter mon premier appartement",
-  "Perdre 5 kgs",
-  "Gagner en productivité",
-  "Apprendre un nouveau langage",
-  "Faire une mission en freelance",
-  "Organiser un meetup autour de la tech",
-  "Faire un triathlon",
-]; 
-/* const Footer = () => (
-  <View style={{ height: '30%', width:'100%',marginTop:'0%', backgroundColor: 'lightblue', alignItems: 'center', justifyContent: 'center' }}>
-    <Text>Footer Content</Text>
-  </View>
-); */
-const handleAddGoal = () => {
-  // Vérifiez si le texte n'est pas vide avant d'ajouter
- 
-  sampleGoals.push(text)
-    //setText(''); // Effacez le texte après l'ajout
-  
-};
-var  text;
-export default function App() {
+const App = () => {
+  const [text, setText] = useState('');
+  const [sampleGoals, setSampleGoals] = useState([
+    "Faire les courses",
+    "Aller à la salle de sport 3 fois par semaine",
+    "Monter à plus de 5000m d'altitude",
+    "Acheter mon premier appartement",
+    "Perdre 5 kgs",
+    "Gagner en productivité",
+    "Apprendre un nouveau langage",
+    "Faire une mission en freelance",
+    "Organiser un meetup autour de la tech",
+    "Faire un triathlon",
+  ]);
+
+  const handleAddGoal = () => {
+    if (text.trim() !== '') {
+      setSampleGoals(prevGoals => [...prevGoals, text]);
+      setText(''); // Effacez le texte après l'ajout
+    }
+  };
+
+  const handleDeleteGoal = (index) => {
+    const newGoals = [...sampleGoals];
+    newGoals.splice(index, 1);
+    setSampleGoals(newGoals);
+  };
+
+  const handleModifyGoal = (index, newText) => {
+    const newGoals = [...sampleGoals];
+    newGoals[index] = newText;
+    setSampleGoals(newGoals);
+  };
+
   return (
-    <ImageBackground source={image}  style={styles.image}>
+    <ImageBackground source={image} style={styles.image}>
       <View style={styles.container}>
-        
         <Text style={styles.title}>Object</Text>
         <View style={styles.test2}>
-        <TextInput placeholder="Entrez" value={text} style={styles.input}/><Button title='ADD' onPress={handleAddGoal}/>
+          <TextInput
+            placeholder="Entrez"
+            value={text}
+            onChangeText={setText}
+            style={styles.input}
+          />
+          <Button title='ADD' onPress={handleAddGoal} />
         </View>
-     
+
         <FlatList
           style={styles.test}
           data={sampleGoals}
           keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <View style={styles.goalContainer}>
               <Text style={styles.goal}>{item}</Text>
-              <Icon style={styles.icon} name="refresh" size={30} color="white" onPress={() => fonction()} />
-              <Icon style={styles.icon2} name="clear" size={30} color="white" onPress={() => fonction()} />
+              <Icon
+                style={styles.icon}
+                name="edit"
+                size={30}
+                color="white"
+                onPress={() => handleModifyGoal(index, 'Nouveau texte')}
+              />
+              <Icon
+                style={styles.icon2}
+                name="close"
+                size={30}
+                color="white"
+                onPress={() => handleDeleteGoal(index)}
+              />
             </View>
           )}
         />
-             
-       
-        
-          
-   {/*  <Footer /> */}
       </View>
     </ImageBackground>
   );
-}
+};
+
+export default App;
 
 const styles = StyleSheet.create({
   container: {
