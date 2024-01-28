@@ -1,147 +1,89 @@
-import React, { useState } from 'react';
-import { ImageBackground, StyleSheet, Text, View, FlatList, TextInput, Button } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, ActivityIndicator, ImageBackground, Image } from 'react-native';
+import * as Location from 'expo-location';
 
-const image = require('./assets/video-game-background-1405076_1280.png');
+const API_KEY = '3dd098d86f80c3d7d0126a97935d6f70';
+const iconBaseUrl = 'http://openweathermap.org/img/wn/';
+//const iconUrl = `${iconBaseUrl}${weatherData.weather[0].icon}@2x.png`;
 
-const App = () => {
-  const [text, setText] = useState('');
-  const [sampleGoals, setSampleGoals] = useState([
-    "Faire les courses",
-    "Aller à la salle de sport 3 fois par semaine",
-    "Monter à plus de 5000m d'altitude",
-    "Acheter mon premier appartement",
-    "Perdre 5 kgs",
-    "Gagner en productivité",
-    "Apprendre un nouveau langage",
-    "Faire une mission en freelance",
-    "Organiser un meetup autour de la tech",
-    "Faire un triathlon",
-  ]);
+export default function App() {
+  const [location, setLocation] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleAddGoal = () => {
-    if (text.trim() !== '') {
-      setSampleGoals(prevGoals => [...prevGoals, text]);
-      setText(''); // Effacez le texte après l'ajout
-    }
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Veuillez activer la localisation pour utiliser cette application.');
+          return;
+        }
 
-  const handleDeleteGoal = (index) => {
-    const newGoals = [...sampleGoals];
-    newGoals.splice(index, 1);
-    setSampleGoals(newGoals);
-  };
+        let currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation(currentLocation);
 
-  const handleModifyGoal = (index, newText) => {
-    const newGoals = [...sampleGoals];
-    newGoals[index] = newText;
-    setSampleGoals(newGoals);
-  };
+        const apiURL = `https://api.openweathermap.org/data/2.5/weather?lat=${currentLocation.coords.latitude}&lon=${currentLocation.coords.longitude}&appid=${API_KEY}`;
+        const response = await fetch(apiURL);
 
-  return (
-    <ImageBackground source={image} style={styles.image}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Object</Text>
-        <View style={styles.test2}>
-          <TextInput
-            placeholder="Entrez"
-            value={text}
-            onChangeText={setText}
-            style={styles.input}
-          />
-          <Button title='ADD' onPress={handleAddGoal} />
-        </View>
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des données météorologiques.');
+        }
 
-        <FlatList
-          style={styles.test}
-          data={sampleGoals}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item, index }) => (
-            <View style={styles.goalContainer}>
-              <Text style={styles.goal}>{item}</Text>
-              <Icon
-                style={styles.icon}
-                name="edit"
-                size={30}
-                color="white"
-                onPress={() => handleModifyGoal(index, 'Nouveau texte')}
-              />
-              <Icon
-                style={styles.icon2}
-                name="close"
-                size={30}
-                color="white"
-                onPress={() => handleDeleteGoal(index)}
-              />
+        const data = await response.json();
+        setWeatherData(data);
+      } catch (error) {
+        console.error('Error:', error);
+       
+      }
+    })();
+  }, []);
+
+  let content;
+  if (errorMsg) {
+    content = <Text>{errorMsg}</Text>;
+  } else if (!location || !weatherData) {
+    content = <ActivityIndicator size="large" />;
+  } else {
+    content = (
+      <ImageBackground
+        source={require('./assets/weatherpicture.jpg')} 
+        style={styles.backgroundImage}
+      >
+        <View style={styles.weatherContainer}>
+          {weatherData && (
+            <View>
+              <Text>{`Température: ${Math.round(weatherData.main.temp - 273)}°C, Conditions: ${weatherData.weather[0].description}`}</Text>
+              <Image source={{ uri: iconUrl }} style={{ width: 50, height: 50 }} />
             </View>
           )}
-        />
-      </View>
-    </ImageBackground>
-  );
-};
+        </View>
+      </ImageBackground>
+    );
+  }
 
-export default App;
+  return (
+    <View style={styles.container}>
+      {content}
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-  },
-  title: {
-    paddingTop: 58,
-    fontSize: 35,
-    color: 'white',
-    fontFamily: 'montserrat',
-  },
-  image: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
-  goalContainer: {
-    flexDirection: 'row', // Aligner le texte et l'icône horizontalement
-    alignItems: 'center', // Centrer les éléments verticalement dans le conteneur
-    marginVertical: 5,
-    
-    marginBottom: 10,
-    marginLeft: 1,
-    backgroundColor:'green',
-    borderRadius:8
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
   },
-  test:{
-   height:'82%'
+  weatherContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 20,
+    borderRadius: 10,
   },
-  goal: {
-    color: 'white',
-    fontSize: 18,
-    width: 250,
-    margin:2
-  },
-  input: {
-  
-    borderRadius: 12,
-    backgroundColor: 'white',
-    height: 40,
-    borderWidth: 1,
-    marginHorizontal:10,
-    width: 200,
-    alignItems: 'flex-start',
-    alignContent: 'flex-start',
-    //marginBottom: 10, // Si nécessaire pour ajouter un espacement entre la liste et le TextInput
-  },
-  Container:{
-    height: 700
-  },
-  
-  icon:{
-   alignContent:'flex-end',
-   marginLeft:5,
-   marginRight:15
-  },
-  test2:{
-    flexDirection: 'row', // Aligner le texte et l'icône horizontalement
-    alignItems: 'center', // Centrer les éléments verticalement dans le conteneur
-    margin: 5,
-    
-   
-   
-  }
 });
